@@ -1,37 +1,50 @@
-document.addEventListener("DOMContentLoaded", function(event) {
-  var backgroundInput = document.getElementById("backgroundInput");
-  var applyButton = document.getElementById("applyButton");
-
-  applyButton.addEventListener("click", function() {
-    var file = backgroundInput.files[0];
-    if (file) {
-      var reader = new FileReader();
-      reader.onload = function() {
-        var dataUrl = reader.result;
-        var image = new Image();
-        image.src = dataUrl;
-        image.onload = function() {
-          var canvas = document.createElement("canvas");
-          canvas.width = image.width;
-          canvas.height = image.height;
-          var context = canvas.getContext("2d");
-          context.drawImage(image, 0, 0, image.width, image.height);
-          var dataUrl = canvas.toDataURL();
-          var blob = dataURItoBlob(dataUrl);
-          saveBlob(blob, "wallpaper.jpg");
-          browser.storage.local.set({ "customBackground": dataUrl });
-          browser.tabs.query({active: true, currentWindow: true}, function(tabs) {
-            browser.tabs.sendMessage(tabs[0].id, {type: "applyBackground"});
-          });
-        };
-      };
-      reader.readAsDataURL(file);
-    }
+document.addEventListener("DOMContentLoaded", function () {
+  // Set the current wallpaper image
+  getWallpaper(function (url) {
+    document.body.style.backgroundImage = "url('" + url + "')";
   });
 
-  function dataURItoBlob(dataURI) {
-    var byteString = atob(dataURI.split(",")[1]);
-    var mimeString = dataURI.split(",")[0].split(":")[1].split(";")[0];
-    var ab = new ArrayBuffer(byteString.length);
-    var ia = new Uint8Array(ab);
-    for (var i = 0; i
+  // Add click event listener to the "Apply" button
+  document.getElementById("applyButton").addEventListener("click", function () {
+    var url = document.getElementById("imageInput").value;
+    setWallpaper(url);
+  });
+});
+
+function setWallpaper(url) {
+  chrome.downloads.download({ url: url, filename: "wallpaper.jpg" }, function () {
+    var file = new Blob([url], { type: "text/plain" });
+    var reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = function (e) {
+      var dataURL = reader.result;
+      browser.storage.local.set({ 'wallpaper': dataURL }, function () {
+        console.log('Wallpaper set');
+        document.getElementById('status').textContent = 'Wallpaper set!';
+      });
+    }
+  });
+}
+
+function getWallpaper(callback) {
+  browser.storage.local.get(['wallpaper'], function (result) {
+    if (result.wallpaper) {
+      callback(result.wallpaper);
+    } else {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', browser.runtime.getURL('wallpaper.jpg'), true);
+      xhr.responseType = 'blob';
+      xhr.onload = function () {
+        var reader = new FileReader();
+        reader.readAsDataURL(xhr.response);
+        reader.onload = function (e) {
+          var dataURL = reader.result;
+          browser.storage.local.set({ 'wallpaper': dataURL }, function () {
+            callback(dataURL);
+          });
+        }
+      };
+      xhr.send();
+    }
+  });
+}
