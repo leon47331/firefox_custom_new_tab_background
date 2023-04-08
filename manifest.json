@@ -1,0 +1,33 @@
+{
+  "manifest_version": 2,
+  "name": "Custom New Tab Background",
+  "version": "1.0",
+  "description": "Change the background image of your Firefox new tab page.",
+  "icons": {
+    "48": "icon.png"
+  },
+  "permissions": [
+    "storage",
+    "activeTab",
+    "<all_urls>",
+    "downloads",
+    "contextMenus",
+    "tabs",
+    "webNavigation",
+    "management",
+    "notifications",
+    "webRequest",
+    "webRequestBlocking",
+    "bookmarks",
+    "history",
+	"unlimitedStorage"
+  ],
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": false
+  },
+  "browser_action": {
+    "default_title": "Custom New Tab Background",
+    "default_popup": "popup.html"
+  }
+}
